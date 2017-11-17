@@ -112,6 +112,10 @@ class WaterTable2:public GLObject
 	unsigned int readBathymetryRequest; // Request token to read back the current bathymetry grid from the GPU
 	mutable GLfloat* readBathymetryBuffer; // Buffer into which to read the current bathymetry grid
 	mutable unsigned int readBathymetryReply; // Reply token after reading back the current bathymetry grid
+        
+        unsigned int readWaterlevelRequest;
+	mutable GLfloat* readWaterlevelBuffer;
+	mutable unsigned int readWaterlevelReply;
 	
 	/* Private methods: */
 	void calcTransformations(void); // Calculates derived transformations
@@ -182,6 +186,12 @@ class WaterTable2:public GLObject
 		{
 		return readBathymetryReply==readBathymetryRequest;
 		}
-	};
+        
+        bool requestWaterlevel(GLfloat* newReadWaterlevelBuffer);
+        
+	bool haveWaterlevel(void) const{
+            return readWaterlevelReply==readWaterlevelRequest;
+        }
+    };
 
 #endif

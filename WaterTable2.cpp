@@ -45,8 +45,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #include "DepthImageRenderer.h"
 #include "ShaderHelper.h"
 
+
+#include <cstring>
+
 // DEBUGGING
-// #include <iostream>
+#include <iostream>
 
 namespace {
 
@@ -749,10 +752,14 @@ void WaterTable2::updateBathymetry(GLContextData& contextData) const
 			/* Finish the request: */
 			readBathymetryReply=readBathymetryRequest;
 			}
+        
 		
+        
 		glActiveTextureARB(GL_TEXTURE2_ARB);
 		glBindTexture(GL_TEXTURE_RECTANGLE_ARB,dataItem->quantityTextureObjects[dataItem->currentQuantity]);
 		glUniform1iARB(dataItem->bathymetryShaderUniformLocations[2],2);
+        
+
 		
 		/* Run the bathymetry update: */
 		glBegin(GL_QUADS);
@@ -993,7 +1000,7 @@ GLfloat WaterTable2::runSimulationStep(bool forceStepSize,GLContextData& context
 	/* Update the current quantities: */
 	dataItem->currentQuantity=1-dataItem->currentQuantity;
 	
-	if(waterDeposit!=0.0f||!renderFunctions.empty())
+	if(waterDeposit!=0.0f||!renderFunctions.empty() || !this->haveWaterlevel())
 		{
 		/* Save OpenGL state: */
 		GLfloat currentClearColor[4];
@@ -1023,10 +1030,14 @@ GLfloat WaterTable2::runSimulationStep(bool forceStepSize,GLContextData& context
 		glActiveTextureARB(GL_TEXTURE0_ARB);
 		glBindTexture(GL_TEXTURE_RECTANGLE_ARB,dataItem->waterTextureObject);
 		glUniform1iARB(dataItem->waterAddShaderUniformLocations[2],0);
+
+
+        
 		
 		/* Call all render functions: */
 		for(std::vector<const AddWaterFunction*>::const_iterator rfIt=renderFunctions.begin();rfIt!=renderFunctions.end();++rfIt)
 			(**rfIt)(contextData);
+        
 		
 		/* Restore OpenGL state: */
 		glDisable(GL_BLEND);
@@ -1048,6 +1059,46 @@ GLfloat WaterTable2::runSimulationStep(bool forceStepSize,GLContextData& context
 		glUniform1iARB(dataItem->waterShaderUniformLocations[0],0);
 		glActiveTextureARB(GL_TEXTURE1_ARB);
 		glBindTexture(GL_TEXTURE_RECTANGLE_ARB,dataItem->quantityTextureObjects[dataItem->currentQuantity]);
+        
+                
+        
+//        std::cout << "Maybe refresh water level buffer" << std::endl;
+        if(!this->haveWaterlevel()){
+            std::cout <<  "Definitely refresh water level buffer" << std::endl;
+            
+            /*
+            int width = 0;
+            int height = 0;
+            
+            glGetTexLevelParameteriv(GL_TEXTURE_RECTANGLE_ARB, 0, GL_TEXTURE_WIDTH, &width);
+            glGetTexLevelParameteriv(GL_TEXTURE_RECTANGLE_ARB, 0, GL_TEXTURE_HEIGHT, &height);
+
+            
+            std::cout << "Texture dimensions: " << width << "x" << height << std::endl;
+            GLint * tmpBuffer = new GLint[width * height];
+            memset(tmpBuffer, 0, sizeof(GLint) * width * height);
+            
+			glGetTexImage(GL_TEXTURE_RECTANGLE_ARB, 0, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, tmpBuffer);
+            
+            int prevVal = 0;
+            for(int x=0; x<width; x++){
+                for(int y=0; y<height; y++){
+                    int val = tmpBuffer[(x*height) + y];
+                    if(val != prevVal){
+                        std::cout << "Have new val: " << std::hex << val << std::endl;
+                    }
+                    prevVal = val;
+                }
+            }
+            */
+            
+            std::cout << "Rendering water level" << std::endl;
+            /* Read back the water grid into the supplied buffer: */
+			glGetTexImage(GL_TEXTURE_RECTANGLE_ARB, 0, GL_RED, GL_FLOAT, readWaterlevelBuffer);
+            std::cout << "Rendered water level" << std::endl;
+            readWaterlevelReply = readWaterlevelRequest;
+        }
+        
 		glUniform1iARB(dataItem->waterShaderUniformLocations[1],1);
 		glActiveTextureARB(GL_TEXTURE2_ARB);
 		glBindTexture(GL_TEXTURE_RECTANGLE_ARB,dataItem->waterTextureObject);
@@ -1120,3 +1171,18 @@ bool WaterTable2::requestBathymetry(GLfloat* newReadBathymetryBuffer)
 	else
 		return false;
 	}
+
+bool WaterTable2::requestWaterlevel(GLfloat* newReadWaterlevelBuffer)
+	{
+    
+    /* Check if the previous bathymetry request has been fulfilled: */
+    if(readWaterlevelReply==readWaterlevelRequest){
+        /* Set up the new bathymetry request: */
+        ++readWaterlevelRequest;
+        readWaterlevelBuffer=newReadWaterlevelBuffer;
+
+        return true;
+    }else{
+        return false;
+    }
+}
