@@ -40,7 +40,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #include <Kinect/FrameBuffer.h>
 #include <Kinect/FrameSource.h>
 
+#include "ControlSocket.h"
+
 #include "Types.h"
+
+#include <functional>
+
 
 /* Forward declarations: */
 namespace Misc {
@@ -156,12 +161,28 @@ class Sandbox:public Vrui::Application,public GLObject
 	GLMotif::TextField* frameRateTextField;
 	GLMotif::TextFieldSlider* waterAttenuationSlider;
 	int controlPipeFd; // File descriptor of an optional named pipe to send control commands to a running AR Sandbox
-	
+        
+        
+        bool useSocketForPipe;
+
+        ControlSocket * controlSocket;
+        
+        virtual void handleControlCommand(std::string * command, handleString_function callback);
+        
+        handleString_function waterlevelCallback;
+	GLfloat* waterlevelBuffer; // Water level grid buffer
+        int waterCoordX;
+        int waterCoordY;
+        
+        
 	/* Private methods: */
 	void rawDepthFrameDispatcher(const Kinect::FrameBuffer& frameBuffer); // Callback receiving raw depth frames from the Kinect camera; forwards them to the frame filter and rain maker objects
 	void receiveFilteredFrame(const Kinect::FrameBuffer& frameBuffer); // Callback receiving filtered depth frames from the filter object
 	void toggleDEM(DEM* dem); // Sets or toggles the currently active DEM
 	void addWater(GLContextData& contextData) const; // Function to render geometry that adds water to the water table
+        
+        void addWaterCustom(GLContextData& contextData) const; //Custom "always rain" function
+        
 	void pauseUpdatesCallback(GLMotif::ToggleButton::ValueChangedCallbackData* cbData);
 	void showWaterControlDialogCallback(Misc::CallbackData* cbData);
 	void waterSpeedSliderCallback(GLMotif::TextFieldSlider::ValueChangedCallbackData* cbData);
