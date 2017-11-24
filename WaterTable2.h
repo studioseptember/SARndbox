@@ -116,6 +116,8 @@ class WaterTable2:public GLObject
         unsigned int readWaterlevelRequest;
 	mutable GLfloat* readWaterlevelBuffer;
 	mutable unsigned int readWaterlevelReply;
+        
+        std::vector<const WaterColumn *> waterColumns;
 	
 	/* Private methods: */
 	void calcTransformations(void); // Calculates derived transformations
@@ -192,6 +194,9 @@ class WaterTable2:public GLObject
 	bool haveWaterlevel(void) const{
             return readWaterlevelReply==readWaterlevelRequest;
         }
+        void setWaterColumn(const WaterColumn* waterColumn);
+        void addWaterColumn(unsigned int x, unsigned int y, unsigned int width, unsigned int height, float amount);
+        void removeWaterColumn(unsigned int x, unsigned int y);
     };
 
 #endif

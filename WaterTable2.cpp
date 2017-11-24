@@ -47,6 +47,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 
 #include <cstring>
+#include <algorithm>
 
 // DEBUGGING
 #include <iostream>
@@ -1060,8 +1061,34 @@ GLfloat WaterTable2::runSimulationStep(bool forceStepSize,GLContextData& context
 		glActiveTextureARB(GL_TEXTURE1_ARB);
 		glBindTexture(GL_TEXTURE_RECTANGLE_ARB,dataItem->quantityTextureObjects[dataItem->currentQuantity]);
         
-                
+//        for(std::vector<const WaterColumn*>::const_iterator waterColumnIterator=waterColumns.begin();waterColumnIterator!=waterColumns.end();++waterColumnIterator){      
         
+//            const WaterColumn* waterColumn = (const WaterColumn*)waterColumnIterator;
+        //std::cout << "Checking water columns... Found " << waterColumns.size() << std::endl;
+        for(const WaterColumn* waterColumn: waterColumns){
+            //	(**waterColumnIterator)(contextData);
+            
+            int size = waterColumn->width * waterColumn->height;
+            /*
+            std::cout << "Processing water column @[" << waterColumn->x << "," << waterColumn->y << "]"<<std::endl; 
+            unsigned int * pixels = new unsigned int[size];
+            for(int a=0; a<size; a++){
+                pixels[a] = 0x00000000;
+                pixels[a] += waterColumn->amount << 16;
+                
+                std::cout << "Added column pixel: " << std::hex << pixels[a] << std::dec << std::endl;
+            }
+            glTexSubImage2D(GL_TEXTURE_RECTANGLE_ARB, 0, waterColumn->x, waterColumn->y, waterColumn->width, waterColumn->height, GL_RGBA, GL_INT, pixels);
+            */
+            
+            float * pixels = new float[size];
+            for(int a=0; a<size; a++){
+                pixels[a] = waterColumn->amount;
+            }
+            glTexSubImage2D(GL_TEXTURE_RECTANGLE_ARB, 0, waterColumn->x, waterColumn->y, waterColumn->width, waterColumn->height, GL_RED, GL_FLOAT, pixels);
+        }
+		
+                
 //        std::cout << "Maybe refresh water level buffer" << std::endl;
         if(!this->haveWaterlevel()){
             std::cout <<  "Definitely refresh water level buffer" << std::endl;
@@ -1184,5 +1211,34 @@ bool WaterTable2::requestWaterlevel(GLfloat* newReadWaterlevelBuffer)
         return true;
     }else{
         return false;
+    }
+}
+
+void WaterTable2::setWaterColumn(const WaterColumn* waterColumn){
+    waterColumns.push_back(waterColumn);
+}
+
+void WaterTable2::addWaterColumn(unsigned int x, unsigned int y, unsigned int width, unsigned int height, float amount){
+    
+    WaterColumn * column = new WaterColumn();
+    
+    std::cout << "Handling water column at [" << column->x << "," << column->y << "]" << std::endl;
+    column->x = x;
+    column->y = y;
+    column->width = width;
+    column->height = height;
+    column->amount = amount;
+    
+    this->setWaterColumn(column);
+}
+
+void WaterTable2::removeWaterColumn(unsigned int x, unsigned int y){
+    for(const WaterColumn * column: waterColumns){
+        if(column->x == x && column->y == y){
+            waterColumns.erase(
+                std::remove(waterColumns.begin(), waterColumns.end(), column), 
+                waterColumns.end()
+            );
+        }
     }
 }

@@ -36,4 +36,14 @@ typedef Geometry::Plane<Scalar,3> Plane; // Type for 3D affine planes
 typedef Geometry::OrthogonalTransformation<Scalar,3> OGTransform; // Type for 3D scaled rigid body transformations
 typedef Geometry::ProjectiveTransformation<Scalar,3> PTransform; // Type for 3D projective transformations (4x4 matrices)
 
+
+struct WaterColumn {
+    unsigned int x;
+    unsigned int y;
+    unsigned int width;
+    unsigned int height;
+    
+    float amount;
+};
+
 #endif

@@ -292,7 +292,7 @@ void ControlSocket::handleClientEvent(epoll_event event){
 }
 
 void ControlSocket::handleControlCommand(std::string * command){
-    std::cout << "Handling command " << command << std::endl;
+    std::cout << "Handling command " << command->c_str() << std::endl;
     
     handleString_function replyHandler = [this] (std::string* reply) {
         if (send(this->socketFd, reply->c_str(), reply->length(), 0) < 0) {

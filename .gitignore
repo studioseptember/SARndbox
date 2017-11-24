@@ -1,0 +1,16 @@
+/bin
+/o
+/d
+/.project
+/.cproject
+/.settings
+
+/BoxLayout.txt
+/nbproject
+/HeightColorMap.cpt
+/ProjectorMatrix.dat
+/SARndbox.cfg
+/etc/SARndbox-2.3/BoxLayout.txt
+/etc/SARndbox-2.3/ProjectorMatrix.dat
+
+/.vscode

@@ -22,7 +22,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #include "Sandbox.h"
 
 #include <ctype.h>
-#include <string.h>
+#include <string.h> 
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -962,28 +962,31 @@ void Sandbox::handleControlCommand(std::string * command, handleString_function 
     std::cout << "Have command in Sandbox.cpp: " << command->c_str() << std::endl;
     
     std::stringstream sstream;
-    sstream<<command;
+    sstream<<command->c_str();
     
-    if(command->compare("ping") == 0){
+    std::string verb;
+    sstream >> verb;
+    
+    std::cout << "Have verb '" << verb.c_str() << "'" << std::endl;
+    
+    
+    if(verb == "ping"){
         std::cout << "Got ping, pong-ing" << std::endl;
         callback(new std::string("pong\n"));
-    }else if(command->find("waterAt") == 0){
-        
-        std::string coords = command->substr(8, command->length() - 8);
-        std::stringstream coordsStream = std::stringstream(coords);
+    }else if(verb == "waterAt"){
         
         std::string token;
-        int xCoord;
-        int yCoord;
+        unsigned int xCoord;
+        unsigned int yCoord;
         
 //        std::getline(sstream, token, ' '); //xCoord
 //        std::stringstream(token) >> xCoord;
-        coordsStream >> xCoord;
+        sstream >> xCoord;
 //        std::cout << "Token: " << token.c_str() << ", sstream: " << sstream << std::endl;
         
 //        std::getline(sstream, token, ' '); //yCoord
 //        std::stringstream(token) >> yCoord;
-        coordsStream >> yCoord;
+        sstream >> yCoord;
 //        std::cout << "Token: " << token.c_str() << ", sstream: " << sstream << std::endl;
 
         waterCoordX = xCoord;
@@ -996,6 +999,36 @@ void Sandbox::handleControlCommand(std::string * command, handleString_function 
         
         waterTable->requestWaterlevel(waterlevelBuffer);
         waterlevelCallback = callback;
+    }else if(verb == "waterColumn"){
+        
+        unsigned int xCoord;
+        unsigned int yCoord;
+        unsigned int width = 1;
+        unsigned int height = 1;
+        float amount;
+        
+        sstream >> xCoord;
+        sstream >> yCoord;
+        
+        sstream >> width;
+        sstream >> height;
+        
+        sstream >> amount;
+        
+        std::cout << "waterColumnX: " << xCoord << ", waterColumnY: " << yCoord << std::endl;
+        
+
+        waterTable->addWaterColumn(xCoord, yCoord, width, height, amount);
+        
+    }else if(verb == "removeWaterColumn"){
+                
+        unsigned int xCoord;
+        unsigned int yCoord;
+        
+        sstream >> xCoord;
+        sstream >> yCoord;
+        
+        waterTable->removeWaterColumn(xCoord, yCoord);
     }
     
 }
@@ -1174,7 +1207,7 @@ void Sandbox::frame(void) {
         std::cout << "Sending response: " << format << std::endl;
         waterlevelCallback(new std::string(format));
         waterlevelCallback(new std::string("\n")); 
-            
+        
         
         /*
         std::cout << "Looping..." << std::endl;
@@ -1190,9 +1223,9 @@ void Sandbox::frame(void) {
             waterlevelCallback(new std::string("\n")); 
 		}
         */
-            
-            
-        waterlevelCallback(new std::string("Water!"));
+        
+        
+        //waterlevelCallback(new std::string("Water!"));
         
         waterlevelCallback = NULL;
     }
