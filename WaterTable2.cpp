@@ -44,6 +44,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include "DepthImageRenderer.h"
 #include "ShaderHelper.h"
+#include "LocalWaterTool.h"
 
 
 #include <cstring>
@@ -51,6 +52,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 // DEBUGGING
 #include <iostream>
+#include <fstream>
 
 namespace {
 
@@ -212,6 +214,10 @@ GLfloat WaterTable2::calcDerivative(WaterTable2::DataItem* dataItem,GLuint quant
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,dataItem->derivativeFramebufferObject);
 	glViewport(0,0,size[0],size[1]);
 	
+    
+    
+    this->handleWaterLevelRequest();
+    
 	/* Set up the temporal derivative computation shader: */
 	glUseProgramObjectARB(dataItem->derivativeShader);
 	glUniformARB<2>(dataItem->derivativeShaderUniformLocations[0],1,cellSize);
@@ -898,16 +904,81 @@ void WaterTable2::setWaterLevel(const GLfloat* waterGrid,GLContextData& contextD
 	dataItem->currentQuantity=1-dataItem->currentQuantity;
 	}
 
+void WaterTable2::handleWaterLevelRequest() const{
+     if(!this->haveWaterlevel()){
+        std::cout <<  "Definitely refresh water level buffer" << std::endl;
+
+        int width = 0;
+        int height = 0;
+
+//        glGetFramebufferAttachmentParameterivEXT(GL_COLOR_ATTACHMENT1, 0, GL_TEXTURE_WIDTH, &width);
+//        glGetFramebufferAttachmentParameterivEXT(GL_COLOR_ATTACHMENT1, 0, GL_TEXTURE_HEIGHT, &height);
+
+        width = size[0];
+        height = size[1];
+
+        std::cout << "Texture dimensions: " << width << "x" << height << std::endl;
+
+        int size = width * height;
+        WaterLevelBufferType * tmpBuffer = new WaterLevelBufferType[size];
+        memset(tmpBuffer, 0, size * sizeof(WaterLevelBufferType));
+
+        /*
+
+        glGetTexImage(GL_TEXTURE_RECTANGLE_ARB, 0, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, tmpBuffer);
+
+        int prevVal = 0;
+        for(int x=0; x<width; x++){
+            for(int y=0; y<height; y++){
+                int val = tmpBuffer[(x*height) + y];
+                if(val != prevVal){
+                    std::cout << "Have new val: " << std::hex << val << std::endl;
+                }
+                prevVal = val;
+            }
+        }
+        */
+
+        std::cout << "Rendering water level" << std::endl;
+        
+        glReadBuffer(GL_COLOR_ATTACHMENT1);
+        glReadPixels(0, 0, width, height, GL_RED, GL_UNSIGNED_BYTE, tmpBuffer);
+        /* Read back the water grid into the supplied buffer: */
+        //glGetTexImage(GL_TEXTURE_RECTANGLE_ARB, 0, GL_RED, GL_FLOAT, tmpBuffer);
+
+        
+        //glReadPixels(0, 0, width, height, GL_BLUE, GL_UNSIGNED_BYTE, tmpBuffer); 
+
+#if 0
+        //char * outputBuffer = new char[size * sizeof(WaterLevelBufferType)];
+        //memcpy(outputBuffer, tmpBuffer, size * sizeof(WaterLevelBufferType));
+
+        std::ofstream file;
+        file.open("output-tmpBuffer.bin");
+        file.write((const char*)tmpBuffer, size * sizeof(WaterLevelBufferType));
+        file.close();
+        
+        std::cout << "Done writing output-tmpBuffer.bin, wrote " << size * sizeof(WaterLevelBufferType) << " bytes from address " << static_cast<void*>(tmpBuffer) << std::endl;
+
+#endif
+        
+        memcpy(readWaterlevelBuffer, tmpBuffer, sizeof(WaterLevelBufferType) * size);
+
+        std::cout << "Rendered water level" << std::endl;
+        readWaterlevelReply = readWaterlevelRequest;
+    }
+}
+
 GLfloat WaterTable2::runSimulationStep(bool forceStepSize,GLContextData& contextData) const
 	{
 	/* Get the data item: */
 	DataItem* dataItem=contextData.retrieveDataItem<DataItem>(this);
 	
-	/* Save relevant OpenGL state: */
+    /* Save relevant OpenGL state: */
 	glPushAttrib(GL_COLOR_BUFFER_BIT|GL_VIEWPORT_BIT);
 	GLint currentFrameBuffer;
 	glGetIntegerv(GL_FRAMEBUFFER_BINDING_EXT,&currentFrameBuffer);
-	
+    
 	/*********************************************************************
 	Step 1: Calculate temporal derivative of most recent quantities.
 	*********************************************************************/
@@ -923,7 +994,7 @@ GLfloat WaterTable2::runSimulationStep(bool forceStepSize,GLContextData& context
 	glDrawBuffer(GL_COLOR_ATTACHMENT0_EXT+2);
 	glViewport(0,0,size[0],size[1]);
 	
-	/* Set up the Euler integration step shader: */
+    /* Set up the Euler integration step shader: */
 	glUseProgramObjectARB(dataItem->eulerStepShader);
 	glUniformARB(dataItem->eulerStepShaderUniformLocations[0],stepSize);
 	glUniformARB(dataItem->eulerStepShaderUniformLocations[1],Math::pow(attenuation,stepSize));
@@ -1001,7 +1072,7 @@ GLfloat WaterTable2::runSimulationStep(bool forceStepSize,GLContextData& context
 	/* Update the current quantities: */
 	dataItem->currentQuantity=1-dataItem->currentQuantity;
 	
-	if(waterDeposit!=0.0f||!renderFunctions.empty() || !this->haveWaterlevel())
+	if(waterDeposit!=0.0f||!renderFunctions.empty() || !this->haveWaterlevel() || this->isDraining)
 		{
 		/* Save OpenGL state: */
 		GLfloat currentClearColor[4];
@@ -1032,7 +1103,12 @@ GLfloat WaterTable2::runSimulationStep(bool forceStepSize,GLContextData& context
 		glBindTexture(GL_TEXTURE_RECTANGLE_ARB,dataItem->waterTextureObject);
 		glUniform1iARB(dataItem->waterAddShaderUniformLocations[2],0);
 
-
+        
+        
+        
+        
+        
+        
         
 		
 		/* Call all render functions: */
@@ -1061,6 +1137,12 @@ GLfloat WaterTable2::runSimulationStep(bool forceStepSize,GLContextData& context
 		glActiveTextureARB(GL_TEXTURE1_ARB);
 		glBindTexture(GL_TEXTURE_RECTANGLE_ARB,dataItem->quantityTextureObjects[dataItem->currentQuantity]);
         
+        
+                
+//        std::cout << "Maybe refresh water level buffer" << std::endl;
+       
+        
+        
 //        for(std::vector<const WaterColumn*>::const_iterator waterColumnIterator=waterColumns.begin();waterColumnIterator!=waterColumns.end();++waterColumnIterator){      
         
 //            const WaterColumn* waterColumn = (const WaterColumn*)waterColumnIterator;
@@ -1088,42 +1170,23 @@ GLfloat WaterTable2::runSimulationStep(bool forceStepSize,GLContextData& context
             glTexSubImage2D(GL_TEXTURE_RECTANGLE_ARB, 0, waterColumn->x, waterColumn->y, waterColumn->width, waterColumn->height, GL_RED, GL_FLOAT, pixels);
         }
 		
-                
-//        std::cout << "Maybe refresh water level buffer" << std::endl;
-        if(!this->haveWaterlevel()){
-            std::cout <<  "Definitely refresh water level buffer" << std::endl;
-            
-            /*
-            int width = 0;
-            int height = 0;
-            
-            glGetTexLevelParameteriv(GL_TEXTURE_RECTANGLE_ARB, 0, GL_TEXTURE_WIDTH, &width);
-            glGetTexLevelParameteriv(GL_TEXTURE_RECTANGLE_ARB, 0, GL_TEXTURE_HEIGHT, &height);
+        
+        
+        if(this->isDraining){
+            #if 0
+            this->drain(contextData);
+            #else
+            const GLsizei * sizes = this->getSize();
+            int size = sizes[0] * sizes[1];
+            GLfloat * waterLevel = new GLfloat[size];
 
-            
-            std::cout << "Texture dimensions: " << width << "x" << height << std::endl;
-            GLint * tmpBuffer = new GLint[width * height];
-            memset(tmpBuffer, 0, sizeof(GLint) * width * height);
-            
-			glGetTexImage(GL_TEXTURE_RECTANGLE_ARB, 0, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, tmpBuffer);
-            
-            int prevVal = 0;
-            for(int x=0; x<width; x++){
-                for(int y=0; y<height; y++){
-                    int val = tmpBuffer[(x*height) + y];
-                    if(val != prevVal){
-                        std::cout << "Have new val: " << std::hex << val << std::endl;
-                    }
-                    prevVal = val;
-                }
+            for(int a=0; a<size; a++){
+                waterLevel[a] = 0.0f;
             }
-            */
-            
-            std::cout << "Rendering water level" << std::endl;
-            /* Read back the water grid into the supplied buffer: */
-			glGetTexImage(GL_TEXTURE_RECTANGLE_ARB, 0, GL_RED, GL_FLOAT, readWaterlevelBuffer);
-            std::cout << "Rendered water level" << std::endl;
-            readWaterlevelReply = readWaterlevelRequest;
+
+            this->setWaterLevel(waterLevel, contextData);
+            #endif
+            this->isDraining = false;
         }
         
 		glUniform1iARB(dataItem->waterShaderUniformLocations[1],1);
@@ -1141,7 +1204,9 @@ GLfloat WaterTable2::runSimulationStep(bool forceStepSize,GLContextData& context
 		
 		/* Update the current quantities: */
 		dataItem->currentQuantity=1-dataItem->currentQuantity;
-		}
+    }
+    
+
 	
 	/* Unbind all shaders and textures: */
 	glUseProgramObjectARB(0);
@@ -1199,12 +1264,12 @@ bool WaterTable2::requestBathymetry(GLfloat* newReadBathymetryBuffer)
 		return false;
 	}
 
-bool WaterTable2::requestWaterlevel(GLfloat* newReadWaterlevelBuffer)
+bool WaterTable2::requestWaterlevel(WaterLevelBufferType* newReadWaterlevelBuffer)
 	{
     
-    /* Check if the previous bathymetry request has been fulfilled: */
+    /* Check if the previous water level request has been fulfilled: */
     if(readWaterlevelReply==readWaterlevelRequest){
-        /* Set up the new bathymetry request: */
+        /* Set up the new water level request: */
         ++readWaterlevelRequest;
         readWaterlevelBuffer=newReadWaterlevelBuffer;
 
@@ -1241,4 +1306,20 @@ void WaterTable2::removeWaterColumn(unsigned int x, unsigned int y){
             );
         }
     }
+}
+
+void WaterTable2::requestDrain(){
+    this->isDraining = true;            
+}
+
+void WaterTable2::drain(GLContextData & contextData) const{
+    	/* Get the data item: */
+	DataItem* dataItem=contextData.retrieveDataItem<DataItem>(this);
+    
+    const GLsizei * sizes = this->getSize();
+    int size = sizes[0] * sizes[1];
+    std::vector<GLubyte> emptyData(size * 4, 0);
+    glBindTexture(GL_TEXTURE_2D,dataItem->quantityTextureObjects[dataItem->currentQuantity]);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, sizes[0], sizes[1], GL_BGRA, GL_UNSIGNED_BYTE, &emptyData[0]);
+    
 }

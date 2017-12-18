@@ -14,3 +14,5 @@
 /etc/SARndbox-2.3/ProjectorMatrix.dat
 
 /.vscode
+*.bin
+*.trace

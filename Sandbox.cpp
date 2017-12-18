@@ -114,6 +114,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include <sstream>
 
+#include <iostream>
+#include <fstream>
+
 /**********************************
 Methods of class Sandbox::DataItem:
  **********************************/
@@ -578,6 +581,7 @@ controlPipeFd(-1) {
     wtSize[0] = 640;
     wtSize[1] = 480;
     wtSize = cfg.retrieveValue<Misc::FixedArray<unsigned int, 2> >("./waterTableSize", wtSize);
+    std::cout<< "wtSize: [" << wtSize[0] << "," << wtSize[1] << "]" << std::endl;
     waterSpeed = cfg.retrieveValue<double>("./waterSpeed", 1.0);
     waterMaxSteps = cfg.retrieveValue<unsigned int>("./waterMaxSteps", 30U);
     Math::Interval<double> rainElevationRange = cfg.retrieveValue<Math::Interval<double> >("./rainElevationRange", Math::Interval<double>(-1000.0, 1000.0));
@@ -639,6 +643,7 @@ controlPipeFd(-1) {
                     ++i;
                     wtSize[j] = (unsigned int) (atoi(argv[i]));
                 }
+                std::cout<< "wtSize: [" << wtSize[0] << "," << wtSize[1] << "]" << std::endl;
             } else if (strcasecmp(argv[i] + 1, "ws") == 0) {
                 ++i;
                 waterSpeed = atof(argv[i]);
@@ -955,6 +960,15 @@ controlPipeFd(-1) {
             navSize = dist;
     }
     navUp = Geometry::normal(Vrui::Vector(basePlane.getNormal()));
+    
+    
+    auto gridSize = waterTable->getSize();
+    waterlevelBuffer = new WaterLevelBufferType[gridSize[0] * gridSize[1]];
+//    waterlevelBuffer = (WaterLevelBufferType*)malloc(sizeof(WaterLevelBufferType) * gridSize[0] * gridSize[1]);
+//    memset(waterlevelBuffer, 0, sizeof(WaterLevelBufferType) * gridSize[0] * gridSize[1]);
+    
+    std::cout << "waterlevelBuffer is at " << &waterlevelBuffer << std::endl;
+    
 }
 
 void Sandbox::handleControlCommand(std::string * command, handleString_function callback){
@@ -994,9 +1008,7 @@ void Sandbox::handleControlCommand(std::string * command, handleString_function 
         
         std::cout << "waterCoordX: " << waterCoordX << ", waterCoordY: " << waterCoordY << std::endl;
         
-        auto gridSize = waterTable->getSize();
-        waterlevelBuffer = new GLfloat[gridSize[1] * gridSize[0]];
-        
+        std::cout << "buffer address " << static_cast<void*>(waterlevelBuffer) << std::endl;
         waterTable->requestWaterlevel(waterlevelBuffer);
         waterlevelCallback = callback;
     }else if(verb == "waterColumn"){
@@ -1186,28 +1198,48 @@ void Sandbox::frame(void) {
         std::cout << "Have size" << std::endl;
         char* format = new char[1024];
  
-        
+        auto width = gridSize[0];
+        auto height = gridSize[1];
         
         int x = 0;
         int y = 0;
         
+        int size = width * height;
         
-        x = std::min<int>(gridSize[0], waterCoordX);
+        x = std::min<int>(width, waterCoordX);
         x = std::max<int>(0, x);
         
-        y = std::min<int>(gridSize[1], waterCoordY);
+        y = std::min<int>(height, waterCoordY);
         y = std::max<int>(0, y);
         
         std::cout << "x: " << x << ", y: "  << y << std::endl;
         
-        float waterLevel = waterlevelBuffer[x + (y * gridSize[0])];
+        //flip the y axis
+        //y = height - y;
         
-        sprintf(format, "%d %d %f", x, y, waterLevel );
+        WaterLevelBufferType waterLevel = waterlevelBuffer[x + (y * width)];
+        std::cout << "Have raw water level: " << (int)waterLevel << std::endl;
+        
+        waterLevel = 255 - waterLevel;
+        std::cout << "Have inverted water level: " << (int)waterLevel << std::endl;
+        
+        float normalizedWaterlevel = waterLevel / 255.0f;
+        std::cout << "Have normalized water level: " << normalizedWaterlevel << std::endl;
+        
+        sprintf(format, "%d %d %f", x, y, normalizedWaterlevel );
         
         std::cout << "Sending response: " << format << std::endl;
+        waterlevelCallback(new std::string("waterAt "));
         waterlevelCallback(new std::string(format));
         waterlevelCallback(new std::string("\n")); 
         
+#if 0
+        std::cout << "Saving file of " << size * sizeof(WaterLevelBufferType) << " bytes from address " << static_cast<void*>(waterlevelBuffer) << std::endl; 
+        std::ofstream file;
+        file.open("output.bin");
+        file.write((const char*)waterlevelBuffer, size * sizeof(WaterLevelBufferType));
+        file.close();
+#endif
         
         /*
         std::cout << "Looping..." << std::endl;

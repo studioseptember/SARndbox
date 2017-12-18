@@ -170,7 +170,7 @@ class Sandbox:public Vrui::Application,public GLObject
         virtual void handleControlCommand(std::string * command, handleString_function callback);
         
         handleString_function waterlevelCallback;
-	GLfloat* waterlevelBuffer; // Water level grid buffer
+	WaterLevelBufferType * waterlevelBuffer; // Water level grid buffer
         int waterCoordX;
         int waterCoordY;
         

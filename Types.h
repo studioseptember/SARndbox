@@ -46,4 +46,6 @@ struct WaterColumn {
     float amount;
 };
 
+#define WaterLevelBufferType GLubyte
+
 #endif

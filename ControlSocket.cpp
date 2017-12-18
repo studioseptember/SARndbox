@@ -28,7 +28,7 @@ ControlSocket::ControlSocket(std::string controlPipeName) {
 
 
     if (this->epollFd == -1){
-        std::cerr << "[E] epoll_create1 failed\n";
+//        std::cerr << "[E] epoll_create1 failed\n";
         return;
     }
 
@@ -38,7 +38,7 @@ ControlSocket::ControlSocket(std::string controlPipeName) {
     if (epoll_ctl(this->epollFd, EPOLL_CTL_ADD, this->serverSocketFd, &event) == -1){
         if (this->epollFd == -1)
         {
-            std::cerr << "[E] epoll_ctl failed\n";
+//            std::cerr << "[E] epoll_ctl failed\n";
         }
     }
     
@@ -50,7 +50,7 @@ bool ControlSocket::makeSocketNonblocking(int socketfd)
     int flags = fcntl(socketfd, F_GETFL, 0);
     if (flags == -1)
     {
-        std::cerr << "[E] fcntl failed (F_GETFL)\n";
+//        std::cerr << "[E] fcntl failed (F_GETFL)\n";
         return false;
     }
 
@@ -58,7 +58,7 @@ bool ControlSocket::makeSocketNonblocking(int socketfd)
     int s = fcntl(socketfd, F_SETFL, flags);
     if (s == -1)
     {
-        std::cerr << "[E] fcntl failed (F_SETFL)\n";
+//        std::cerr << "[E] fcntl failed (F_SETFL)\n";
         return false;
     }
 
@@ -76,14 +76,14 @@ void ControlSocket::listen(std::string controlPipeName){
     strcpy(controlSocket.sun_path, controlPipeName.c_str());
     unlink(controlSocket.sun_path);
 
-    std::cout << "Opening socket: " << controlSocket.sun_path << std::endl;
+//    std::cout << "Opening socket: " << controlSocket.sun_path << std::endl;
 
     socklen_t len = strlen(controlSocket.sun_path) + sizeof(controlSocket.sun_family);
     int res = bind(this->serverSocketFd, (struct sockaddr *)&controlSocket, len);
-    std::cout << "Bind result: " << res << ", errno: " << errno << std::endl;
+//    std::cout << "Bind result: " << res << ", errno: " << errno << std::endl;
 
     res = ::listen(this->serverSocketFd, 1);
-    std::cout << "Listen result: " << res << ", errno: " << errno << std::endl;
+//    std::cout << "Listen result: " << res << ", errno: " << errno << std::endl;
 
     //child:
 //    for(;;){
@@ -91,7 +91,7 @@ void ControlSocket::listen(std::string controlPipeName){
     
     if(this->serverSocketFd > 0){
 
-        std::cout << "Waiting for connection on " << controlSocket.sun_path << std::endl;
+//        std::cout << "Waiting for connection on " << controlSocket.sun_path << std::endl;
 //
 //        int res = select(controlSocketServerFd, NULL, NULL, NULL, &listenTimeout);
 //        std::cout << "Have connection waiting:" << res << std::endl;
@@ -159,7 +159,7 @@ void ControlSocket::tick(){
 
 void ControlSocket::handleServerEvent(epoll_event event){
     
-    std::cout << "Have server event: " << event.events << std::endl;
+//    std::cout << "Have server event: " << event.events << std::endl;
 
 
     if(this->socketFd > 0){
@@ -171,11 +171,11 @@ void ControlSocket::handleServerEvent(epoll_event event){
 
     this->socketFd = accept(this->serverSocketFd, &remote, &len);
 
-    std::cout << "Got a new connection" << std::endl;
+//    std::cout << "Got a new connection" << std::endl;
 
     if (!this->makeSocketNonblocking(this->socketFd))
     {
-        std::cerr << "[E] make_socket_nonblocking failed\n";
+//        std::cerr << "[E] make_socket_nonblocking failed\n";
         return;
     }
 
@@ -184,7 +184,7 @@ void ControlSocket::handleServerEvent(epoll_event event){
     event.events = EPOLLIN | EPOLLET;
     if (epoll_ctl(this->epollFd, EPOLL_CTL_ADD, this->socketFd, &event) == -1)
     {
-        std::cerr << "[E] epoll_ctl failed\n";
+//        std::cerr << "[E] epoll_ctl failed\n";
         return;
     }
             
@@ -218,7 +218,7 @@ void ControlSocket::handleServerEvent(epoll_event event){
 
 void ControlSocket::handleClientEvent(epoll_event event){
     
-    std::cout << "Have client event: " << event.events << std::endl;
+//    std::cout << "Have client event: " << event.events << std::endl;
     
     if(this->socketFd <= 0){
         return;
@@ -246,7 +246,7 @@ void ControlSocket::handleClientEvent(epoll_event event){
                 buffer[received-1] = 0;
             }
             
-            std::cout << "Reading: " << buffer << std::endl;
+//            std::cout << "Reading: " << buffer << std::endl;
             
 
             this->handleControlCommand(new std::string(buffer));
@@ -292,7 +292,7 @@ void ControlSocket::handleClientEvent(epoll_event event){
 }
 
 void ControlSocket::handleControlCommand(std::string * command){
-    std::cout << "Handling command " << command->c_str() << std::endl;
+//    std::cout << "Handling command " << command->c_str() << std::endl;
     
     handleString_function replyHandler = [this] (std::string* reply) {
         if (send(this->socketFd, reply->c_str(), reply->length(), 0) < 0) {

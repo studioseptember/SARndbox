@@ -113,11 +113,13 @@ class WaterTable2:public GLObject
 	mutable GLfloat* readBathymetryBuffer; // Buffer into which to read the current bathymetry grid
 	mutable unsigned int readBathymetryReply; // Reply token after reading back the current bathymetry grid
         
-        unsigned int readWaterlevelRequest;
-	mutable GLfloat* readWaterlevelBuffer;
-	mutable unsigned int readWaterlevelReply;
+        unsigned int readWaterlevelRequest = 1;
+	mutable WaterLevelBufferType* readWaterlevelBuffer;
+	mutable unsigned int readWaterlevelReply = 1;
         
         std::vector<const WaterColumn *> waterColumns;
+        
+        mutable bool isDraining;
 	
 	/* Private methods: */
 	void calcTransformations(void); // Calculates derived transformations
@@ -189,7 +191,8 @@ class WaterTable2:public GLObject
 		return readBathymetryReply==readBathymetryRequest;
 		}
         
-        bool requestWaterlevel(GLfloat* newReadWaterlevelBuffer);
+        bool requestWaterlevel(WaterLevelBufferType* newReadWaterlevelBuffer);
+        void handleWaterLevelRequest() const;
         
 	bool haveWaterlevel(void) const{
             return readWaterlevelReply==readWaterlevelRequest;
@@ -197,6 +200,8 @@ class WaterTable2:public GLObject
         void setWaterColumn(const WaterColumn* waterColumn);
         void addWaterColumn(unsigned int x, unsigned int y, unsigned int width, unsigned int height, float amount);
         void removeWaterColumn(unsigned int x, unsigned int y);
+        void requestDrain();
+        void drain(GLContextData & contextData) const;
     };
 
 #endif
