@@ -990,8 +990,8 @@ void Sandbox::handleControlCommand(std::string * command, handleString_function 
     }else if(verb == "waterAt"){
         
         std::string token;
-        unsigned int xCoord;
-        unsigned int yCoord;
+        float xCoord;
+        float yCoord;
         
 //        std::getline(sstream, token, ' '); //xCoord
 //        std::stringstream(token) >> xCoord;
@@ -1003,8 +1003,13 @@ void Sandbox::handleControlCommand(std::string * command, handleString_function 
         sstream >> yCoord;
 //        std::cout << "Token: " << token.c_str() << ", sstream: " << sstream << std::endl;
 
-        waterCoordX = xCoord;
-        waterCoordY = yCoord;
+        xCoord = std::min(1.0f, std::max(0.0f, xCoord));
+        yCoord = std::min(1.0f, std::max(0.0f, yCoord));
+        
+        auto gridSize = waterTable->getSize();
+        
+        waterCoordX = xCoord * gridSize[0];
+        waterCoordY = yCoord * gridSize[1];
         
         std::cout << "waterCoordX: " << waterCoordX << ", waterCoordY: " << waterCoordY << std::endl;
         
@@ -1013,11 +1018,15 @@ void Sandbox::handleControlCommand(std::string * command, handleString_function 
         waterlevelCallback = callback;
     }else if(verb == "waterColumn"){
         
-        unsigned int xCoord;
-        unsigned int yCoord;
-        unsigned int width = 1;
-        unsigned int height = 1;
+        
+        float xCoord;
+        float yCoord;
+        float width = 1;
+        float height = 1;
         float amount;
+        
+        
+        auto gridSize = waterTable->getSize();
         
         sstream >> xCoord;
         sstream >> yCoord;
@@ -1027,20 +1036,30 @@ void Sandbox::handleControlCommand(std::string * command, handleString_function 
         
         sstream >> amount;
         
+        xCoord = std::min(1.0f, std::max(0.0f, xCoord));
+        yCoord = std::min(1.0f, std::max(0.0f, yCoord));
+        
         std::cout << "waterColumnX: " << xCoord << ", waterColumnY: " << yCoord << std::endl;
         
 
-        waterTable->addWaterColumn(xCoord, yCoord, width, height, amount);
+        waterTable->addWaterColumn(xCoord * gridSize[0], yCoord * gridSize[1], width * gridSize[0], height * gridSize[1], amount);
         
     }else if(verb == "removeWaterColumn"){
                 
-        unsigned int xCoord;
-        unsigned int yCoord;
+        float xCoord;
+        float yCoord;
+        
+        auto gridSize = waterTable->getSize();
         
         sstream >> xCoord;
         sstream >> yCoord;
         
-        waterTable->removeWaterColumn(xCoord, yCoord);
+        xCoord = std::min(1.0f, std::max(0.0f, xCoord));
+        yCoord = std::min(1.0f, std::max(0.0f, yCoord));
+        
+        waterTable->removeWaterColumn(xCoord * gridSize[0], yCoord * gridSize[1]);
+    }else if(verb == "reset"){
+        waterTable->resetColumns();
     }
     
 }
@@ -1218,13 +1237,13 @@ void Sandbox::frame(void) {
         //y = height - y;
         
         WaterLevelBufferType waterLevel = waterlevelBuffer[x + (y * width)];
-        std::cout << "Have raw water level: " << (int)waterLevel << std::endl;
+//        std::cout << "Have raw water level: " << (int)waterLevel << std::endl;
         
         waterLevel = 255 - waterLevel;
-        std::cout << "Have inverted water level: " << (int)waterLevel << std::endl;
+//        std::cout << "Have inverted water level: " << (int)waterLevel << std::endl;
         
         float normalizedWaterlevel = waterLevel / 255.0f;
-        std::cout << "Have normalized water level: " << normalizedWaterlevel << std::endl;
+//        std::cout << "Have normalized water level: " << normalizedWaterlevel << std::endl;
         
         sprintf(format, "%d %d %f", x, y, normalizedWaterlevel );
         

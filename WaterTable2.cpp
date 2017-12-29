@@ -1285,19 +1285,30 @@ void WaterTable2::setWaterColumn(const WaterColumn* waterColumn){
 
 void WaterTable2::addWaterColumn(unsigned int x, unsigned int y, unsigned int width, unsigned int height, float amount){
     
+    std::cout << "WaterTable2::addWaterColumn(" << x << ", " << y << ", " << width << ", " << height << ", " << amount << ");" << std::endl;
+    
     WaterColumn * column = new WaterColumn();
     
-    std::cout << "Handling water column at [" << column->x << "," << column->y << "]" << std::endl;
+    auto gridSize = this->getSize();
+    unsigned int gridWidth = gridSize[0];
+    unsigned int gridHeight = gridSize[1];
+    
+    //std::cout << "Handling water column at [" << column->x << "," << column->y << "]" << std::endl;
     column->x = x;
     column->y = y;
-    column->width = width;
-    column->height = height;
+    column->width = std::min(width, gridWidth);
+    column->height = std::min(height, gridHeight);
     column->amount = amount;
+    
+    std::cout << "WaterTable2::addWaterColumn has column: (" << column->x << ", " << column->y << ", " << column->width << ", " << column->height << ", " << column->amount << ")" << std::endl;
+    
     
     this->setWaterColumn(column);
 }
 
 void WaterTable2::removeWaterColumn(unsigned int x, unsigned int y){
+    
+    std::cout << "WaterTable2::removeWaterColumn(" << x << ", " << y << ");" << std::endl;
     for(const WaterColumn * column: waterColumns){
         if(column->x == x && column->y == y){
             waterColumns.erase(
@@ -1307,6 +1318,11 @@ void WaterTable2::removeWaterColumn(unsigned int x, unsigned int y){
         }
     }
 }
+
+void WaterTable2::resetColumns(){
+    waterColumns.clear();
+}
+
 
 void WaterTable2::requestDrain(){
     this->isDraining = true;            

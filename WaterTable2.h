@@ -200,6 +200,9 @@ class WaterTable2:public GLObject
         void setWaterColumn(const WaterColumn* waterColumn);
         void addWaterColumn(unsigned int x, unsigned int y, unsigned int width, unsigned int height, float amount);
         void removeWaterColumn(unsigned int x, unsigned int y);
+        
+        void resetColumns();
+        
         void requestDrain();
         void drain(GLContextData & contextData) const;
     };
