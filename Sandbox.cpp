@@ -296,7 +296,7 @@ void Sandbox::addWaterCustom(GLContextData& contextData) const {
 void Sandbox::addWater(GLContextData& contextData) const {
 
     /* Check if the most recent rain object list is not empty: */
-    if (handExtractor != 0 && !handExtractor->getLockedExtractedHands().empty()) {
+    if ((rainColumns.size() > 0) || (handExtractor != 0 && !handExtractor->getLockedExtractedHands().empty())) {
         /* Render all rain objects into the water table: */
         glPushAttrib(GL_ENABLE_BIT);
         glDisable(GL_CULL_FACE);
@@ -309,16 +309,47 @@ void Sandbox::addWater(GLContextData& contextData) const {
         y.normalize();
 
         glVertexAttrib1fARB(1, rainStrength / waterSpeed);
-        for (HandExtractor::HandList::const_iterator hIt = handExtractor->getLockedExtractedHands().begin(); hIt != handExtractor->getLockedExtractedHands().end(); ++hIt) {
-            /*std::cerr << "Hand debug info " << std::endl;
-            std::cerr << "radius " << hIt->radius << std::endl;
-            std::cerr << "center " << hIt->center << std::endl;
-            std::cerr << std::endl;*/
-            /* Render a rain disk approximating the hand: */
+        if(handExtractor != 0){
+            for (HandExtractor::HandList::const_iterator hIt = handExtractor->getLockedExtractedHands().begin(); hIt != handExtractor->getLockedExtractedHands().end(); ++hIt) {
+                /* Render a rain disk approximating the hand: */
+                glBegin(GL_POLYGON);
+                for (int i = 0; i < 32; ++i) {
+                    Scalar angle = Scalar(2) * Math::Constants<Scalar>::pi * Scalar(i) / Scalar(32);
+                    glVertex(hIt->center + x * (Math::cos(angle) * hIt->radius * 0.75) + y * (Math::sin(angle) * hIt->radius * 0.75));
+                }
+                glEnd();
+            }
+        }
+        
+
+//        std::cout << "X: " << x << std::endl;
+        x.components[0] = 1;
+        x.components[1] = 0;
+        x.components[2] = 0;
+
+//        std::cout << "X: " << x << std::endl;
+        
+        
+//        std::cout << "Y: " << y << std::endl;
+        
+        y.components[0] = 0;
+        y.components[1] = 1;
+        y.components[2] = 0;
+        
+//        std::cout << "Y: " << y << std::endl;
+        
+
+        
+        for(const RainColumn* rainColumn: rainColumns){
             glBegin(GL_POLYGON);
             for (int i = 0; i < 32; ++i) {
                 Scalar angle = Scalar(2) * Math::Constants<Scalar>::pi * Scalar(i) / Scalar(32);
-                glVertex(hIt->center + x * (Math::cos(angle) * hIt->radius * 0.75) + y * (Math::sin(angle) * hIt->radius * 0.75));
+                Point point = rainColumn->point + x * (Math::cos(angle) * rainColumn->radius * 0.75) + y * (Math::sin(angle) * rainColumn->radius * 0.75);
+
+                //Point point = rainColumn->point + ;
+                
+//                std::cout << "Have point " << point << std::endl;
+                glVertex(point);
             }
             glEnd();
         }
@@ -826,7 +857,8 @@ controlPipeFd(-1) {
     frameFilter->setSpatialFilter(true);
     frameFilter->setOutputFrameFunction(Misc::createFunctionCall(this, &Sandbox::receiveFilteredFrame));
 
-    if (waterSpeed > 0.0) {
+    //disable handextractor for WNM
+    if (false && waterSpeed > 0.0) {
         /* Create the hand extractor object: */
         handExtractor = new HandExtractor(frameSize, pixelDepthCorrection, cameraIps.depthProjection);
     }
@@ -1060,6 +1092,26 @@ void Sandbox::handleControlCommand(std::string * command, handleString_function 
         waterTable->removeWaterColumn(xCoord * gridSize[0], yCoord * gridSize[1]);
     }else if(verb == "reset"){
         waterTable->resetColumns();
+    }else if(verb == "rainColumn"){
+            
+        float xCoord;
+        float yCoord;
+        float radius;
+        
+                
+        sstream >> xCoord;
+        sstream >> yCoord;
+        sstream >> radius;
+        
+        RainColumn * col = new RainColumn;
+        col->radius = radius;
+        col->point[0] = (100.0f * xCoord) - 50;
+        col->point[1] = (80.0f * yCoord) - 40;
+        col->point[2] = 0;
+        rainColumns.push_back(col);
+        
+    }else if(verb == "resetRain"){
+        rainColumns.clear();
     }
     
 }
