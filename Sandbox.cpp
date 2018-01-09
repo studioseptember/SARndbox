@@ -1091,7 +1091,9 @@ void Sandbox::handleControlCommand(std::string * command, handleString_function 
         
         waterTable->removeWaterColumn(xCoord * gridSize[0], yCoord * gridSize[1]);
     }else if(verb == "reset"){
+        //waterTable->clearWater();
         waterTable->resetColumns();
+        rainColumns.clear();
     }else if(verb == "rainColumn"){
             
         float xCoord;
@@ -1110,8 +1112,6 @@ void Sandbox::handleControlCommand(std::string * command, handleString_function 
         col->point[2] = 0;
         rainColumns.push_back(col);
         
-    }else if(verb == "resetRain"){
-        rainColumns.clear();
     }
     
 }
