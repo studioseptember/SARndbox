@@ -119,7 +119,7 @@ class WaterTable2:public GLObject
         
         std::vector<const WaterColumn *> waterColumns;
         
-        mutable bool isDraining;
+        mutable bool shouldDrain = false;
 	
 	/* Private methods: */
 	void calcTransformations(void); // Calculates derived transformations
@@ -200,11 +200,11 @@ class WaterTable2:public GLObject
         void setWaterColumn(const WaterColumn* waterColumn);
         void addWaterColumn(unsigned int x, unsigned int y, unsigned int width, unsigned int height, float amount);
         void removeWaterColumn(unsigned int x, unsigned int y);
+        void handleWaterColumns() const;
         
         void resetColumns();
         
-        void requestDrain();
-        void drain(GLContextData & contextData) const;
+        void drain();
     };
 
 #endif

@@ -1091,8 +1091,8 @@ void Sandbox::handleControlCommand(std::string * command, handleString_function 
         
         waterTable->removeWaterColumn(xCoord * gridSize[0], yCoord * gridSize[1]);
     }else if(verb == "reset"){
-        //waterTable->clearWater();
         waterTable->resetColumns();
+        waterTable->drain();
         rainColumns.clear();
     }else if(verb == "rainColumn"){
             
@@ -1105,10 +1105,19 @@ void Sandbox::handleControlCommand(std::string * command, handleString_function 
         sstream >> yCoord;
         sstream >> radius;
         
+        float xmin = -60.0f;
+        float xmax = 54.0f;
+        
+        float ymin = -45.0f;
+        float ymax = 40.0f;
+
+        float width = xmax - xmin;
+        float height = ymax - ymin;
+        
         RainColumn * col = new RainColumn;
         col->radius = radius;
-        col->point[0] = (100.0f * xCoord) - 50;
-        col->point[1] = (80.0f * yCoord) - 40;
+        col->point[0] = (width * xCoord) + xmin;
+        col->point[1] = (height * yCoord) + ymin;
         col->point[2] = 0;
         rainColumns.push_back(col);
         
@@ -1256,17 +1265,17 @@ void Sandbox::frame(void) {
     
     if(waterlevelCallback != NULL && waterTable->haveWaterlevel()){
         
-        std::cout << "Have waterlevel" << std::endl;
+//        std::cout << "Have waterlevel" << std::endl;
         
         //do stuff
 //        GLfloat elevMin,elevMax;
 //        elevMin=elevMax=waterlevelBuffer[0];
 //        const GLfloat* bbPtr=waterlevelBuffer+1;
     
-        std::cout << "Have waterlevel buffer" << std::endl;
+//        std::cout << "Have waterlevel buffer" << std::endl;
         auto gridSize = waterTable->getSize();
         
-        std::cout << "Have size" << std::endl;
+//        std::cout << "Have size" << std::endl;
         char* format = new char[1024];
  
         auto width = gridSize[0];
@@ -1283,7 +1292,7 @@ void Sandbox::frame(void) {
         y = std::min<int>(height, waterCoordY);
         y = std::max<int>(0, y);
         
-        std::cout << "x: " << x << ", y: "  << y << std::endl;
+//        std::cout << "waterAt x: " << x << ", y: "  << y << std::endl;
         
         //flip the y axis
         //y = height - y;
