@@ -27,6 +27,8 @@
 
 #include <functional>
 
+#include <sstream> 
+
 typedef std::function<void(std::string * command)> handleString_function;
 typedef std::function<void(std::string * command, handleString_function)> handleCommand_function;
 
@@ -45,6 +47,7 @@ private:
     
     void handleServerEvent(epoll_event event);
     void handleClientEvent(epoll_event event);
+    void handleBuffer();
             
     int socketFd;
     int serverSocketFd;
@@ -58,6 +61,8 @@ private:
     static constexpr int max_events = 32;
     
     handleCommand_function commandHandler;
+    
+    std::stringstream buffer;
 
 };
 
