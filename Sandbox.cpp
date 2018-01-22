@@ -349,7 +349,7 @@ void Sandbox::addWater(GLContextData& contextData) const {
 
                 //Point point = rainColumn->point + ;
                 
-                std::cout << "Have point " << point << std::endl;
+//                std::cout << "Have point " << point << std::endl;
                 glVertex(point);
             }
             glEnd();
@@ -369,8 +369,8 @@ void Sandbox::addWater(GLContextData& contextData) const {
 
             Point topLeft(boxX,boxY,0);
             Point topRight(boxX+boxWidth,boxY,0);
-            Point botRight(boxX+boxWidth,boxY-boxHeight,0);
-            Point botLeft(boxX,boxY-boxHeight,0);
+            Point botRight(boxX+boxWidth,boxY+boxHeight,0);
+            Point botLeft(boxX,boxY+boxHeight,0);
 
             glVertex(topLeft);
             glVertex(topRight);
@@ -1049,8 +1049,8 @@ void Sandbox::handleControlCommand(std::string * command, handleString_function 
     
     
 
-    float boxXMin = -54.0f;
-    float boxXMax = 54.0f;
+    float boxXMin = -56.0f;
+    float boxXMax = 56.0f;
 
     float boxYMin = -45.0f;
     float boxYMax = 40.0f;
@@ -1090,7 +1090,7 @@ void Sandbox::handleControlCommand(std::string * command, handleString_function 
         waterCoordX = xCoord * gridSize[0];
         waterCoordY = yCoord * gridSize[1];
         
-        std::cout << "waterCoordX: " << waterCoordX << ", waterCoordY: " << waterCoordY << std::endl;
+//        std::cout << "waterCoordX: " << waterCoordX << ", waterCoordY: " << waterCoordY << std::endl;
         
 //        std::cout << "buffer address " << static_cast<void*>(waterlevelBuffer) << std::endl;
         waterTable->requestWaterlevel(waterlevelBuffer);
