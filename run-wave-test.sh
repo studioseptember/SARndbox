@@ -5,7 +5,7 @@ PID=$!
 echo "PID = ${PID}";
 
 sleep 2; 
-echo "waterColumn 0 0 0.1 1 5" |socat - UNIX-CONNECT:/tmp/control-socket; 
+echo "waterColumn 0 0 0.05 1 5" |socat - UNIX-CONNECT:/tmp/control-socket; 
 sleep 5;
 echo "waterAt 0.5 0.5
 reset" | socat - UNIX-CONNECT:/tmp/control-socket; 

@@ -1049,8 +1049,8 @@ void Sandbox::handleControlCommand(std::string * command, handleString_function 
     
     
 
-    float boxXMin = -56.0f;
-    float boxXMax = 56.0f;
+    float boxXMin = -50.0f;
+    float boxXMax = 50.0f;
 
     float boxYMin = -45.0f;
     float boxYMax = 40.0f;
