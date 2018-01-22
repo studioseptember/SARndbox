@@ -1,25 +1,38 @@
-#apitrace trace --api gl ./bin/debug/SARndbox -uhm -fpv -us -uhs -vruiVerbose -cp /tmp/control-socket -socket &
-./bin/debug/SARndbox -uhm -fpv -us -uhs -vruiVerbose -cp /tmp/control-socket -socket &
+NUM=`ls /tmp/.ICE-unix/`
 
-PID=$!
-echo "PID = ${PID}";
+export SESSION_MANAGER=local/sarndbox:@/tmp/.ICE-unix/$NUM,unix/sarndbox:/tmp/.ICE-unix/$NUM
+export DISPLAY=:0
 
-sleep 2; 
-echo "waterColumn 0.9 0 0.1 1 12" |socat - UNIX-CONNECT:/tmp/control-socket; 
-sleep 5;
-echo "waterAt 0.5 0.5
-reset" | socat - UNIX-CONNECT:/tmp/control-socket; 
-sleep 2; 
-echo "waterColumn 0.9 0 0.1 1 12" |socat - UNIX-CONNECT:/tmp/control-socket; 
+
+
+killall node
 sleep 1;
-echo "reset" | socat - UNIX-CONNECT:/tmp/control-socket; 
-sleep 1; 
+killall chrome
+sleep 1;
 
-echo "killing ${PID}"
-
-kill -SIGINT $PID
-echo "killed ${PID}"
-sleep 2
 killall SARndbox
+sleep 1;
+
+xrandr --output HDMI-0 --scale 0.75x1
+
+sleep 10;
+
+./bin/debug/SARndbox -wo 15 -uhm -fpv -ns -nhs -vruiVerbose -cp /tmp/control-socket -socket &
+sleep 1
+cd ~/src/node-sandbox; ~/Downloads/node-v8.9.4-linux-x64/bin/node index.js &
+sleep 1
+google-chrome-unstable &
+sleep 5
+google-chrome-unstable --app-id=cgigkgkdfoolaeobhmpmcnkobgnmlkio &
+
+sleep 10
+
+killall chrome
+
+sleep 5
 
 
+google-chrome-unstable &
+sleep 5
+google-chrome-unstable --app-id=cgigkgkdfoolaeobhmpmcnkobgnmlkio &
+sleep 5

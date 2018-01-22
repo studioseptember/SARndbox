@@ -887,7 +887,7 @@ void WaterTable2::handleWaterLevelRequest() const {
         width = size[0];
         height = size[1];
 
-        std::cout << "Texture dimensions: " << width << "x" << height << std::endl;
+//        std::cout << "Texture dimensions: " << width << "x" << height << std::endl;
 
         int size = width * height;
         WaterLevelBufferType * tmpBuffer = new WaterLevelBufferType[size];
@@ -1058,7 +1058,7 @@ GLfloat WaterTable2::runSimulationStep(bool forceStepSize, GLContextData& contex
         glViewport(0, 0, size[0], size[1]);
         glClearColor(waterDeposit*stepSize, 0.0f, 0.0f, 0.0f);
         if(this->shouldDrain){        
-            glClearColor(-1000.0f, 0.0f, 0.0f, 0.0f);
+            glClearColor(-100000.0f, 0.0f, 0.0f, 0.0f);
             this->shouldDrain = false;
         }
         glClear(GL_COLOR_BUFFER_BIT);

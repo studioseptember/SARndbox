@@ -174,8 +174,12 @@ class Sandbox:public Vrui::Application,public GLObject
         int waterCoordX;
         int waterCoordY;
         
+        float sourceWaterCoordX;
+        float sourceWaterCoordY;
+        
         
         std::vector<const RainColumn *> rainColumns;
+        std::vector<const WaveColumn *> waveColumns;
         
 	/* Private methods: */
 	void rawDepthFrameDispatcher(const Kinect::FrameBuffer& frameBuffer); // Callback receiving raw depth frames from the Kinect camera; forwards them to the frame filter and rain maker objects

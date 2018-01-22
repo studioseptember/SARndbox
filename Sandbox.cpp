@@ -296,7 +296,7 @@ void Sandbox::addWaterCustom(GLContextData& contextData) const {
 void Sandbox::addWater(GLContextData& contextData) const {
 
     /* Check if the most recent rain object list is not empty: */
-    if ((rainColumns.size() > 0) || (handExtractor != 0 && !handExtractor->getLockedExtractedHands().empty())) {
+    if ((waveColumns.size() > 0) || (rainColumns.size() > 0) || (handExtractor != 0 && !handExtractor->getLockedExtractedHands().empty())) {
         /* Render all rain objects into the water table: */
         glPushAttrib(GL_ENABLE_BIT);
         glDisable(GL_CULL_FACE);
@@ -341,6 +341,7 @@ void Sandbox::addWater(GLContextData& contextData) const {
 
         
         for(const RainColumn* rainColumn: rainColumns){
+            glVertexAttrib1fARB(1, rainColumn->intensity / waterSpeed);
             glBegin(GL_POLYGON);
             for (int i = 0; i < 32; ++i) {
                 Scalar angle = Scalar(2) * Math::Constants<Scalar>::pi * Scalar(i) / Scalar(32);
@@ -348,11 +349,42 @@ void Sandbox::addWater(GLContextData& contextData) const {
 
                 //Point point = rainColumn->point + ;
                 
-//                std::cout << "Have point " << point << std::endl;
+                std::cout << "Have point " << point << std::endl;
                 glVertex(point);
             }
             glEnd();
         }
+        
+        //std::cout << "Number of wavecolumns: " << waveColumns.size() << std::endl;
+        
+        for(const WaveColumn* waveColumn: waveColumns){
+            
+            glVertexAttrib1fARB(1, waveColumn->amount / waterSpeed);
+            glBegin(GL_POLYGON);
+
+            float boxX = waveColumn->x;
+            float boxY = waveColumn->y;
+            float boxWidth = waveColumn->width;
+            float boxHeight = waveColumn->height;
+
+            Point topLeft(boxX,boxY,0);
+            Point topRight(boxX+boxWidth,boxY,0);
+            Point botRight(boxX+boxWidth,boxY-boxHeight,0);
+            Point botLeft(boxX,boxY-boxHeight,0);
+
+            glVertex(topLeft);
+            glVertex(topRight);
+            glVertex(botRight);
+            glVertex(botLeft);
+
+            
+//            std::cout << "waveBox: " << topLeft << ", " << topRight << ", " << botRight << ", " << botLeft << std::endl;
+                
+            glEnd();
+        }
+        
+
+            
 
         glPopAttrib();
     }
@@ -1016,6 +1048,19 @@ void Sandbox::handleControlCommand(std::string * command, handleString_function 
     std::cout << "Have verb '" << verb.c_str() << "'" << std::endl;
     
     
+
+    float boxXMin = -54.0f;
+    float boxXMax = 54.0f;
+
+    float boxYMin = -45.0f;
+    float boxYMax = 40.0f;
+
+    float boxWidth = boxXMax - boxXMin;
+    float boxHeight = boxYMax - boxYMin;
+        
+        
+        
+    
     if(verb == "ping"){
         std::cout << "Got ping, pong-ing" << std::endl;
         callback(new std::string("pong\n"));
@@ -1035,17 +1080,19 @@ void Sandbox::handleControlCommand(std::string * command, handleString_function 
         sstream >> yCoord;
 //        std::cout << "Token: " << token.c_str() << ", sstream: " << sstream << std::endl;
 
+        sourceWaterCoordX = xCoord;
+        sourceWaterCoordY = yCoord;
+        
         xCoord = std::min(1.0f, std::max(0.0f, xCoord));
         yCoord = std::min(1.0f, std::max(0.0f, yCoord));
         
         auto gridSize = waterTable->getSize();
-        
         waterCoordX = xCoord * gridSize[0];
         waterCoordY = yCoord * gridSize[1];
         
         std::cout << "waterCoordX: " << waterCoordX << ", waterCoordY: " << waterCoordY << std::endl;
         
-        std::cout << "buffer address " << static_cast<void*>(waterlevelBuffer) << std::endl;
+//        std::cout << "buffer address " << static_cast<void*>(waterlevelBuffer) << std::endl;
         waterTable->requestWaterlevel(waterlevelBuffer);
         waterlevelCallback = callback;
     }else if(verb == "waterColumn"){
@@ -1053,13 +1100,10 @@ void Sandbox::handleControlCommand(std::string * command, handleString_function 
         
         float xCoord;
         float yCoord;
-        float width = 1;
-        float height = 1;
+        float width;
+        float height;
         float amount;
-        
-        
-        auto gridSize = waterTable->getSize();
-        
+                
         sstream >> xCoord;
         sstream >> yCoord;
         
@@ -1068,56 +1112,38 @@ void Sandbox::handleControlCommand(std::string * command, handleString_function 
         
         sstream >> amount;
         
-        xCoord = std::min(1.0f, std::max(0.0f, xCoord));
-        yCoord = std::min(1.0f, std::max(0.0f, yCoord));
+        WaveColumn * col = new WaveColumn;
+	col->amount = amount;
+        col->width = width * boxWidth;
+        col->height = height * boxHeight;
+        col->x = (boxWidth * xCoord) + boxXMin;
+        col->y = (boxHeight * yCoord) + boxYMin;
         
-        std::cout << "waterColumnX: " << xCoord << ", waterColumnY: " << yCoord << std::endl;
+        waveColumns.push_back(col);
         
-
-        waterTable->addWaterColumn(xCoord * gridSize[0], yCoord * gridSize[1], width * gridSize[0], height * gridSize[1], amount);
-        
-    }else if(verb == "removeWaterColumn"){
-                
-        float xCoord;
-        float yCoord;
-        
-        auto gridSize = waterTable->getSize();
-        
-        sstream >> xCoord;
-        sstream >> yCoord;
-        
-        xCoord = std::min(1.0f, std::max(0.0f, xCoord));
-        yCoord = std::min(1.0f, std::max(0.0f, yCoord));
-        
-        waterTable->removeWaterColumn(xCoord * gridSize[0], yCoord * gridSize[1]);
     }else if(verb == "reset"){
         waterTable->resetColumns();
         waterTable->drain();
         rainColumns.clear();
+        waveColumns.clear();
     }else if(verb == "rainColumn"){
             
         float xCoord;
         float yCoord;
         float radius;
+        float intensity;
         
                 
         sstream >> xCoord;
         sstream >> yCoord;
         sstream >> radius;
-        
-        float xmin = -60.0f;
-        float xmax = 54.0f;
-        
-        float ymin = -45.0f;
-        float ymax = 40.0f;
+        sstream >> intensity;
 
-        float width = xmax - xmin;
-        float height = ymax - ymin;
-        
         RainColumn * col = new RainColumn;
+	col->intensity = intensity;
         col->radius = radius;
-        col->point[0] = (width * xCoord) + xmin;
-        col->point[1] = (height * yCoord) + ymin;
+        col->point[0] = (boxWidth * xCoord) + boxXMin;
+        col->point[1] = (boxHeight * yCoord) + boxYMin;
         col->point[2] = 0;
         rainColumns.push_back(col);
         
@@ -1306,7 +1332,7 @@ void Sandbox::frame(void) {
         float normalizedWaterlevel = waterLevel / 255.0f;
 //        std::cout << "Have normalized water level: " << normalizedWaterlevel << std::endl;
         
-        sprintf(format, "%d %d %f", x, y, normalizedWaterlevel );
+        sprintf(format, "%f %f %f", sourceWaterCoordX, sourceWaterCoordY, normalizedWaterlevel );
         
         std::cout << "Sending response: " << format << std::endl;
         waterlevelCallback(new std::string("waterAt "));

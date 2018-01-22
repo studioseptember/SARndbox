@@ -46,9 +46,19 @@ struct WaterColumn {
     float amount;
 };
 
+struct WaveColumn {
+    float x;
+    float y;
+    float width;
+    float height;
+    
+    float amount;
+};
+
 struct RainColumn {
     Point point;
     float radius;
+    float intensity;
 };
 
 #define WaterLevelBufferType GLubyte
