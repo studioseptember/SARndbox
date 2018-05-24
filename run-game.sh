@@ -13,26 +13,28 @@ sleep 1;
 killall SARndbox
 sleep 1;
 
-xrandr --output HDMI-0 --scale 0.75x1
+#xrandr --output HDMI-0 --scale 0.75x1
+google-chrome-unstable https://wnm-app.local/ &
 
-sleep 10;
+sleep 3;
 
-./bin/debug/SARndbox -wo 15 -uhm -fpv -ns -nhs -vruiVerbose -cp /tmp/control-socket -socket &
+./bin/debug/SARndbox -wo 15 -uhm -fpv -ncl -ns -nhs -vruiVerbose -cp /tmp/control-socket -socket &
 sleep 1
 cd ~/src/node-sandbox; ~/Downloads/node-v8.9.4-linux-x64/bin/node index.js &
 sleep 1
-google-chrome-unstable &
-sleep 5
+#sleep 5
+#google-chrome-unstable --app-id=cgigkgkdfoolaeobhmpmcnkobgnmlkio &
+
+#sleep 10
+
+#killall chrome
+
+#sleep 5
+
+
+
+#google-chrome-unstable &
+#sleep 5
 google-chrome-unstable --app-id=cgigkgkdfoolaeobhmpmcnkobgnmlkio &
-
-sleep 10
-
-killall chrome
-
 sleep 5
-
-
-google-chrome-unstable &
-sleep 5
-google-chrome-unstable --app-id=cgigkgkdfoolaeobhmpmcnkobgnmlkio &
-sleep 5
+xdotool mousemove 100 100

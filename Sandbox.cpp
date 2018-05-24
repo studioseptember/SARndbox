@@ -1049,11 +1049,11 @@ void Sandbox::handleControlCommand(std::string * command, handleString_function 
     
     
 
-    float boxXMin = -50.0f;
-    float boxXMax = 50.0f;
+    float boxXMin = -84.0f;
+    float boxXMax = 81.0f;
 
-    float boxYMin = -45.0f;
-    float boxYMax = 40.0f;
+    float boxYMin = -60.0f;
+    float boxYMax = 63.0f;
 
     float boxWidth = boxXMax - boxXMin;
     float boxHeight = boxYMax - boxYMin;
@@ -1084,7 +1084,7 @@ void Sandbox::handleControlCommand(std::string * command, handleString_function 
         sourceWaterCoordY = yCoord;
         
         xCoord = std::min(1.0f, std::max(0.0f, xCoord));
-        yCoord = std::min(1.0f, std::max(0.0f, yCoord));
+        yCoord = 1.0f - std::min(1.0f, std::max(0.0f, yCoord));
         
         auto gridSize = waterTable->getSize();
         waterCoordX = xCoord * gridSize[0];
